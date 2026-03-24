@@ -1,0 +1,120 @@
+{
+  "name": "AI Text Summarizer (Ollama)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "summarize",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "name": "Webhook - Receive Text",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "text-summarizer"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nlet text = '';\n\nif (input.body && input.body.text) {\n  text = input.body.text;\n} else if (input.body) {\n  text = JSON.stringify(input.body);\n}\n\nif (!text || text.length < 10) {\n  return [{ json: { error: 'Please provide text in the request body as { \"text\": \"your text here\" }', text: '', valid: false } }];\n}\n\n// Truncate very long texts to stay within model context\nconst maxLength = 8000;\nconst truncated = text.length > maxLength;\ntext = text.substring(0, maxLength);\n\nreturn [{ json: { text, original_length: input.body.text ? input.body.text.length : 0, truncated, valid: true } }];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000002",
+      "name": "Validate & Prepare Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "combinator": "and",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000003",
+      "name": "Is Valid Input?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'llama3.1:8b', prompt: 'You are a professional summarizer. Summarize the following text concisely and accurately. Provide:\\n\\n1. **One-Line Summary**: A single sentence capturing the main point.\\n2. **Key Points**: 3-5 bullet points with the most important information.\\n3. **Tone**: The overall tone of the text (formal, casual, technical, etc.).\\n\\nText to summarize:\\n\\n' + $json.text, stream: false, options: { temperature: 0.3, num_predict: 1000 } }) }}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000004",
+      "name": "Summarize with Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ollamaResponse = $input.first().json;\nlet response;\n\ntry {\n  response = typeof ollamaResponse.data === 'string' ? JSON.parse(ollamaResponse.data) : ollamaResponse;\n} catch (e) {\n  response = ollamaResponse;\n}\n\nconst summary = response.response || response.data?.response || 'Unable to generate summary';\nconst inputMeta = $('Validate & Prepare Input').first().json;\n\nreturn [{\n  json: {\n    summary: summary,\n    metadata: {\n      original_length: inputMeta.original_length,\n      was_truncated: inputMeta.truncated,\n      model: 'llama3.1:8b',\n      processed_at: new Date().toISOString()\n    }\n  }\n}];"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000005",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000006",
+      "name": "Send Summary Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $('Validate & Prepare Input').first().json.error }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "a1b2c3d4-0001-4000-8000-000000000007",
+      "name": "Send Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [960, 440]
+    }
+  ],
+  "connections": {
+    "Webhook - Receive Text": {
+      "main": [[{ "node": "Validate & Prepare Input", "type": "main", "index": 0 }]]
+    },
+    "Validate & Prepare Input": {
+      "main": [[{ "node": "Is Valid Input?", "type": "main", "index": 0 }]]
+    },
+    "Is Valid Input?": {
+      "main": [
+        [{ "node": "Summarize with Ollama", "type": "main", "index": 0 }],
+        [{ "node": "Send Error Response", "type": "main", "index": 0 }]
+      ]
+    },
+    "Summarize with Ollama": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    },
+    "Format Response": {
+      "main": [[{ "node": "Send Summary Response", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "AI" }, { "name": "Ollama" }, { "name": "Summarization" }, { "name": "Free Sample" }]
+}

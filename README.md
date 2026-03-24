@@ -176,6 +176,29 @@ All workflows use **Ollama** for local AI -- no API keys, no recurring costs, co
 
 ---
 
+## Like These Workflows? Give This Repo a Star!
+
+If these templates saved you time or taught you something new, **please consider starring this repo** -- it helps other n8n users find these free resources and motivates us to release more.
+
+### More from Bonskari
+
+| Resource | Description |
+|---|---|
+| [**Self-Hosted AI Workflow Pack**](https://bonskari.github.io/n8n-ai-workflows/) | All 11 production-ready n8n + Ollama workflows. One-time purchase, lifetime updates, no subscriptions. |
+| [**n8n-ai-workflows**](https://github.com/bonskari/n8n-ai-workflows) | Landing page and documentation for the full workflow pack. |
+| [**n8n-workflow-pack**](https://github.com/bonskari/n8n-workflow-pack) | Additional workflow templates and resources for n8n power users. |
+
+### Why Self-Hosted AI?
+
+- **Zero recurring costs** -- no per-token API fees, no monthly subscriptions
+- **Complete data privacy** -- your documents, emails, and business data never leave your machine
+- **No rate limits** -- process as much as you want, as fast as your hardware allows
+- **Works offline** -- no internet dependency for AI processing
+
+> **New here?** Start with the 3 free workflows above, then check out the [full pack](https://bonskari.github.io/n8n-ai-workflows/) when you're ready to automate more.
+
+---
+
 ## License
 
 These workflow templates are provided free for personal and commercial use. Attribution is appreciated but not required.
